@@ -1,6 +1,8 @@
 package com.knrmalhotra.locationtracker;
 
 import android.Manifest;
+import android.app.AlertDialog;
+import android.content.DialogInterface;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.os.Build;
@@ -10,6 +12,7 @@ import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.content.ContextCompat;
+import android.view.View;
 import android.widget.Toast;
 
 import com.google.android.gms.common.ConnectionResult;
@@ -33,6 +36,8 @@ public class DashboardActivity extends FragmentActivity implements OnMapReadyCal
     private Location mLocation;
     private Marker mMarker; // Current Location Marker
     private static final int PERMISSION_REQUEST_LOCATION_CODE = 99;
+    double initial_lat, initial_lng;
+    double final_lat, final_lng;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -45,6 +50,7 @@ public class DashboardActivity extends FragmentActivity implements OnMapReadyCal
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
+
     }
 
 
@@ -80,8 +86,8 @@ public class DashboardActivity extends FragmentActivity implements OnMapReadyCal
     @Override
     public void onConnected(@Nullable Bundle bundle) {
         mLocationRequest = new LocationRequest();
-        mLocationRequest.setInterval(1000);
-        mLocationRequest.setFastestInterval(1000);
+        mLocationRequest.setInterval(100);
+        mLocationRequest.setFastestInterval(100);
         mLocationRequest.setPriority(LocationRequest.PRIORITY_BALANCED_POWER_ACCURACY);
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED){
             LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient, mLocationRequest, this);
@@ -143,10 +149,37 @@ public class DashboardActivity extends FragmentActivity implements OnMapReadyCal
 
         mMarker = mMap.addMarker(markerOptions);
         mMap.moveCamera(CameraUpdateFactory.newLatLng(latLng));
-        mMap.animateCamera(CameraUpdateFactory.zoomBy(10));
+        mMap.animateCamera(CameraUpdateFactory.zoomBy(20));
         if (mGoogleApiClient != null){
             LocationServices.FusedLocationApi.removeLocationUpdates(mGoogleApiClient, this);
         }
 
     }
+
+    public void startPosition(View view){
+        initial_lat = mMarker.getPosition().latitude;
+        initial_lng = mMarker.getPosition().longitude;
+        //Toast.makeText(this, "Current Location Lat and Lag " + initial_lat + initial_lng,Toast.LENGTH_SHORT).show();
+    }
+
+    public void stopPosition(View view){
+        final_lat = mMarker.getPosition().latitude;
+        final_lng = mMarker.getPosition().longitude;
+        //Toast.makeText(this, "Current Location Lat and Lag " + initial_lat + initial_lng,Toast.LENGTH_SHORT).show();
+        float[] result = new float[10];
+        Location.distanceBetween(initial_lat, initial_lng, final_lat, final_lng, result);
+        android.app.AlertDialog.Builder alertDialogBuilder = new android.app.AlertDialog.Builder(this);
+        alertDialogBuilder.setMessage("Distance Covered "+result[0] + " KM");
+        alertDialogBuilder.setPositiveButton("OK",
+                new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface arg0, int arg1) {
+                        finish();
+                    }
+                });
+
+        AlertDialog alertDialog = alertDialogBuilder.create();
+        alertDialog.show();
+    }
+
 }
